@@ -4,3 +4,4 @@
 // - name (string)
 // - taskDescription (string, the riddle text shown to the player)
 // - correctAnswer (string)
+
