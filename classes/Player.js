@@ -9,6 +9,7 @@
 //   - calculate the duration (end - start) and add it to the times array
 // - showStats()
 //   - show the total time and the average time per riddle
+import fs from 'fs';
 
 export default class Player{
     constructor(name){
@@ -16,7 +17,7 @@ export default class Player{
         this.times=[]
     }
     recordTime(start, end){
-        const duration= end - start
+        const duration= (end - start) / 1000
         this.times.push(duration)
     }
     showStats(){
@@ -34,4 +35,25 @@ export default class Player{
         console.log(`Total time: ${totalTime} ms`);
         console.log(`Average time per riddle: ${averageTime} ms`);
     }
+
+    saveScore() {
+        const scoreData = {
+            name: this.name,
+            totalTime: this.getTotalTime(),
+            averageTime: this.getAverageTime(),
+            date: new Date().toISOString()
+        };
+
+        let scores = []
+        if (fs.existsSync('scores.json')) {
+            const fileData = fs.readFileSync('scores.json', 'utf8');
+            scores = JSON.parse(fileData)
+        }
+
+        scores.push(scoreData)
+        
+        fs.writeFileSync('scores.json', JSON.stringify(scores, null, 2));
+        console.log("Score saved to leaderboard!")
+    }
+
 }

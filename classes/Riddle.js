@@ -13,7 +13,7 @@
 //   - keep asking until the answer is correct
 
 export default class Riddle{
-    constructor({id, name, taskDescription, correctAnswer})
+    constructor({id, name, taskDescription, correctAnswer, hint})
     {
         this.id=id
         this.name=name
@@ -24,10 +24,19 @@ export default class Riddle{
     ask(prompt) {
         console.log(`Riddle: ${this.name}`);
 
-        let userAnswer = prompt(`${this.taskDescription}: `);
-
+        let userAnswer = prompt(`${this.taskDescription} (Type 'hint' for a clue): `);
+        let usedHint = false;
         while (userAnswer !== this.correctAnswer) {
-            console.log("Incorrect! Try again.");
+            if (userAnswer.toLowerCase() === 'hint') {
+                usedHint = true;
+                if (this.hint) {
+                    console.log(`💡 Hint: ${this.hint}`);
+                } else {
+                    console.log("Sorry, no hint available for this riddle.");
+                }
+            } else {
+                console.log("Incorrect! Try again.");
+            }
             userAnswer = prompt(`${this.taskDescription}: `);
         }
 

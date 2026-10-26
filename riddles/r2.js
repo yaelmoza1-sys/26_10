@@ -9,5 +9,8 @@ export default {
     id: 2,
     name: "Time Riddle",
     taskDescription: "I have hands, but I cannot clap. What am I?",
-    correctAnswer: "Clock"
+    correctAnswer: "Clock",
+    level: "medium",
+    timeLimit:60,
+    hint: "Cl..."
   };
