@@ -1,51 +1,206 @@
-// Entry point of the game. Run it with: node app.js
-//
-// This file should:
-// 1. Import PromptSync (from 'prompt-sync') and create the `prompt` function.
-// 2. Import the Riddle class, the Player class, and the array of all riddles (from riddles/index.js).
-// 3. Show a welcome message and ask the player for their name, then create a Player object.
-// 4. Loop over all riddles. For each riddle:
-//    - save the start time (Date.now())
-//    - create a Riddle object and call its ask() method
-//    - save the end time (Date.now())
-//    - save the time using player.recordTime()
-// 5. After the loop, call player.showStats() to show total time and average time per riddle.
-import PromptSync from 'prompt-sync';
+import promptSync from 'prompt-sync';
 import Player from './classes/Player.js';
-import AllRiddles from './riddles/index.js';
 import Riddle from './classes/Riddle.js';
-import r1 from './riddles/r1.js';
-import r2 from './riddles/r2.js';
 
-const prompt = PromptSync();
+import {
+    getAllRiddles,
+    createRiddle,
+    updateRiddle,
+    deleteRiddle
+} from './api/riddlesApi.js';
 
-console.log("Welcome to the Riddle Game! ")
-const playerName = prompt("What is your name? ")
-const player = new Player(playerName)
-const chosenLevel = prompt('Choose difficulty: easy / medium: ')
-const activeRiddles = AllRiddles.filter(riddle => riddle.level === chosenLevel)
+import {
+    findPlayerByName,
+    getAllPlayers
+} from './api/playersApi.js';
 
-for (let i = 0; i < activeRiddles.length; i++){
-    
-    const riddleData = activeRiddles[i]
-    const start = Date.now()
-    const riddle = new Riddle(riddleData)
-    riddle.ask(prompt)
-    const end = Date.now()
-    
-    let durationInSeconds = (end - start) / 1000;
-    
-    if (durationInSeconds > riddleData.timeLimit) {
-        console.log("Too slow! 5 seconds penalty applied.")
-        durationInSeconds += 5
-    }
-    
-    const adjustedEnd = start + (durationInSeconds * 1000);
-    player.recordTime(start, adjustedEnd);
-    
-    console.log("-------------------")
+const prompt = promptSync();
+
+function showMenu() {
+    console.log(`
+1. Play game
+2. Create riddle
+3. Read riddles
+4. Update riddle
+5. Delete riddle
+6. Leaderboard
+0. Exit
+`);
 }
 
-console.log("🎉 Congratulations! You finished all the riddles!")
-player.showStats()
-player.saveScore()
+async function main() {
+    let choice;
+
+    do {
+        showMenu();
+        choice = prompt('Choose an option: ');
+
+        switch (choice) {
+            case '1': await startGame(); break;
+            case '2': await addRiddle(); break;
+            case '3': await readRiddles(); break;
+            case '4': await editRiddle(); break;
+            case '5': await removeRiddle(); break;
+            case '6': await showLeaderboard(); break;
+            case '0': console.log('Goodbye!'); break;
+            default: console.log('Invalid choice.');
+        }
+    } while (choice !== '0');
+}
+
+async function startGame() {
+    const name = prompt('Enter your name: ').trim();
+    if (!name) return console.log('Name cannot be empty.');
+
+    let player = await findPlayerByName(name);
+
+    if (player) {
+        const savedPlayer = player;
+        player = new Player(savedPlayer.name);
+        player.id = savedPlayer.id;
+        player.lowestTime = savedPlayer.lowestTime;
+
+        console.log(`Welcome back ${name}!`);
+        if (player.lowestTime !== null) {
+            console.log(`Your best time: ${player.lowestTime.toFixed(2)} seconds`);
+        }
+    } else {
+        player = new Player(name);
+        await player.savePlayer();
+        if (player.id === null) return;
+    }
+
+    const level = prompt('Choose level (easy/medium): ').trim().toLowerCase();
+    if (!['easy', 'medium'].includes(level)) {
+        console.log('Invalid level.');
+        return;
+    }
+
+    const riddles = (await getAllRiddles()).filter(r => r.level === level);
+    if (!riddles.length) return console.log('No riddles available.');
+
+    for (const data of riddles) {
+        const riddle = new Riddle(data);
+        const start = Date.now();
+
+        riddle.ask(prompt);
+
+        let duration = (Date.now() - start) / 1000;
+
+        if (duration > riddle.timeLimit) {
+            console.log('Time limit exceeded! 5 seconds penalty.');
+            duration += 5;
+        }
+
+        player.times.push(duration);
+    }
+
+    player.showStats();
+    await player.updateBestTime();
+}
+
+async function addRiddle() {
+    const name = prompt('Riddle name: ').trim();
+    const taskDescription = prompt('Task description: ').trim();
+    const correctAnswer = prompt('Correct answer: ').trim();
+    const level = prompt('Level (easy/medium): ').trim().toLowerCase();
+    const timeLimit = Number(prompt('Time limit: '));
+    const hint = prompt('Hint: ').trim();
+
+    if (!name || !taskDescription || !correctAnswer || !hint ||
+        !['easy', 'medium'].includes(level) ||
+        !Number.isFinite(timeLimit) || timeLimit <= 0) {
+        return console.log('Invalid riddle details.');
+    }
+
+    const result = await createRiddle({
+        name, taskDescription, correctAnswer, level, timeLimit, hint
+    });
+
+    console.log(result ? 'Riddle created successfully!' : 'Failed to create riddle.');
+}
+
+function displayRiddles(riddles) {
+    riddles.forEach(r => {
+        console.log(`
+ID: ${r.id}
+Name: ${r.name}
+Description: ${r.taskDescription}
+Answer: ${r.correctAnswer}
+Level: ${r.level}
+Time limit: ${r.timeLimit}
+Hint: ${r.hint}
+--------------------`);
+    });
+}
+
+async function readRiddles() {
+    const riddles = await getAllRiddles();
+
+    if (!riddles.length) return console.log('No riddles found.');
+
+    displayRiddles(riddles);
+}
+
+async function editRiddle() {
+    const riddles = await getAllRiddles();
+    if (!riddles.length) return console.log('No riddles found.');
+
+    displayRiddles(riddles);
+
+    const id = Number(prompt('Enter riddle ID to update: '));
+    const riddle = riddles.find(r => Number(r.id) === id);
+
+    if (!riddle) return console.log('Riddle not found.');
+
+    const updated = {
+        ...riddle,
+        name: prompt(`Name (${riddle.name}): `).trim() || riddle.name,
+        taskDescription: prompt(`Description (${riddle.taskDescription}): `).trim() || riddle.taskDescription,
+        correctAnswer: prompt(`Answer (${riddle.correctAnswer}): `).trim() || riddle.correctAnswer,
+        level: prompt(`Level (${riddle.level}): `).trim().toLowerCase() || riddle.level,
+        timeLimit: Number(prompt(`Time limit (${riddle.timeLimit}): `)) || riddle.timeLimit,
+        hint: prompt(`Hint (${riddle.hint}): `).trim() || riddle.hint
+    };
+
+    if (!['easy', 'medium'].includes(updated.level)) {
+        return console.log('Invalid level.');
+    }
+
+    const result = await updateRiddle(id, updated);
+    console.log(result ? 'Riddle updated successfully!' : 'Failed to update riddle.');
+}
+
+async function removeRiddle() {
+    const riddles = await getAllRiddles();
+    if (!riddles.length) return console.log('No riddles found.');
+
+    displayRiddles(riddles);
+
+    const id = Number(prompt('Enter riddle ID to delete: '));
+    if (!riddles.some(r => Number(r.id) === id)) {
+        return console.log('Riddle not found.');
+    }
+
+    if (prompt('Are you sure? (yes/no): ').toLowerCase() !== 'yes') {
+        return console.log('Deletion cancelled.');
+    }
+
+    const result = await deleteRiddle(id);
+    console.log(result ? 'Riddle deleted successfully!' : 'Failed to delete riddle.');
+}
+
+async function showLeaderboard() {
+    const players = (await getAllPlayers())
+        .filter(p => p.lowestTime !== null && p.lowestTime !== undefined)
+        .sort((a, b) => a.lowestTime - b.lowestTime);
+
+    if (!players.length) return console.log('No records yet.');
+
+    console.log('\nLeaderboard:');
+    players.forEach((p, i) => {
+        console.log(`${i + 1}. ${p.name} - ${p.lowestTime.toFixed(2)} seconds`);
+    });
+}
+
+main();

@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "prompt-sync": "^4.2.0"
+    "prompt-sync": "^4.2.0",
+    "json-server": "0.17.4"
+  },
+  "scripts": {
+    "server": "json-server --watch db.json --port 3000"
   }
 }

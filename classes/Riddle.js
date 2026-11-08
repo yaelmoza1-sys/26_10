@@ -19,6 +19,7 @@ export default class Riddle{
         this.name=name
         this.taskDescription = taskDescription
         this.correctAnswer = correctAnswer
+        this.hint=hint
     }
 
     ask(prompt) {
@@ -26,8 +27,8 @@ export default class Riddle{
 
         let userAnswer = prompt(`${this.taskDescription} (Type 'hint' for a clue): `);
         let usedHint = false;
-        while (userAnswer !== this.correctAnswer) {
-            if (userAnswer.toLowerCase() === 'hint') {
+        while (userAnswer.trim().toLowerCase() !== this.correctAnswer.trim().toLowerCase()) {
+            if (userAnswer.trim().toLowerCase() === 'hint') {
                 usedHint = true;
                 if (this.hint) {
                     console.log(`💡 Hint: ${this.hint}`);

@@ -1,0 +1,29 @@
+{
+  "riddles": [
+    {
+      "id": 1,
+      "name": "Easy Math",
+      "taskDescription": "What is 5 + 3?",
+      "correctAnswer": "8",
+      "level": "easy",
+      "timeLimit": 30,
+      "hint": "7+1"
+    },
+    {
+      "id": 2,
+      "name": "Time Riddle",
+      "taskDescription": "I have hands, but I cannot clap. What am I?",
+      "correctAnswer": "Clock",
+      "level": "medium",
+      "timeLimit": 60,
+      "hint": "Cl..."
+    }
+  ],
+  "players": [
+    {
+      "name": "yael",
+      "lowestTime": null,
+      "id": 1
+    }
+  ]
+}
