@@ -1,6 +1,6 @@
 export async function getAllRiddles() {
     try {
-        const res = await fetch(`http://localhost:3000/riddles`)
+        const res = await fetch(`http://localhost:3000/api/riddles`)
         if (!res.ok) throw new Error("Failed to fetch riddles")
         return await res.json()
     }
@@ -13,7 +13,7 @@ export async function getAllRiddles() {
 
 export async function createRiddle(riddleData) {
     try {
-        const res = await fetch(`http://localhost:3000/riddles`, {
+        const res = await fetch(`http://localhost:3000/api/riddles`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json',},
             body: JSON.stringify(riddleData)
@@ -33,7 +33,7 @@ export async function createRiddle(riddleData) {
 
 export async function updateRiddle(id, riddle){
     try{
-        const res = await fetch(`http://localhost:3000/riddles/${id}`,{
+        const res = await fetch(`http://localhost:3000/api/riddles/${id}`,{
             method: `PUT`,
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(riddle)
@@ -49,7 +49,7 @@ export async function updateRiddle(id, riddle){
 
 export async function deleteRiddle(id){
     try{
-        const res = await fetch(`http://localhost:3000/riddles/${id}`,{
+        const res = await fetch(`http://localhost:3000/api/riddles/${id}`,{
             method: `DELETE`
         })
         if(!res.ok)throw new Error("Failed to delete  riddle");

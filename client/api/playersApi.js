@@ -1,13 +1,15 @@
-export async function findPlayerByName(name){
-    try{
-        const res = await fetch(`http://localhost:3000/players?name=${name}`)
-        
-        if(!res.ok)throw new Error("Failed to find player");
-        const players = await res.json();
-        return players.length > 0 ? players[0] : undefined;
+export async function findPlayerByName(name) {
+    try {
+        const res = await fetch(
+            `http://localhost:3000/api/players/search?name=${encodeURIComponent(name)}`
+        );
+
+        if (!res.ok) throw new Error("Failed to find player");
+
+        return await res.json();
     }
     catch (error) {
-        console.error("Server error:", error.message)
+        console.error("Server error:", error.message);
         return undefined;
     }
 }
@@ -18,7 +20,7 @@ export async function createPlayer(name) {
             name,
             lowestTime: null
         };
-        const res = await fetch(`http://localhost:3000/players`, {
+        const res = await fetch(`http://localhost:3000/api/players`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json',},
             body: JSON.stringify(newPlayer)
@@ -37,7 +39,7 @@ export async function createPlayer(name) {
 
 export async function updatePlayer(player){
     try{
-        const res = await fetch(`http://localhost:3000/players/${player.id}`,{
+        const res = await fetch(`http://localhost:3000/api/players/${player.id}`,{
             method: `PUT`,
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(player)
@@ -53,7 +55,7 @@ export async function updatePlayer(player){
 
 export async function getAllPlayers() {
     try {
-        const res = await fetch(`http://localhost:3000/players`)
+        const res = await fetch(`http://localhost:3000/api/players`)
         if (!res.ok) throw new Error("Failed to fetch players")
         return await res.json()
     }
